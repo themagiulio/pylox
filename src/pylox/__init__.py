@@ -4,6 +4,7 @@ from pylox.pylox import PyLox
 
 
 def main():
+    pylox: PyLox = PyLox()
     file_path: str | None = None
 
     try:
@@ -11,4 +12,7 @@ def main():
     except IndexError:
         file_path = None
 
-    PyLox(file_path)
+    if file_path is None:
+        pylox.run_prompt()
+    else:
+        pylox.run_file(file_path)
