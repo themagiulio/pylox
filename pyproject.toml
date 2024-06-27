@@ -1,7 +1,7 @@
 [project]
 name = "pylox"
 version = "0.1.0"
-description = "Add your description here"
+description = "A Lox implementation written in Python."
 authors = [
     { name = "Giulio De Matteis", email = "hello@giuliodematte.is" }
 ]
