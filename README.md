@@ -1,8 +1,8 @@
 # pylox
 
-A Lox implementation written in Python.
+A [Lox](https://github.com/munificent/craftinginterpreters) implementation written in Python.
 
-## Instruction
+## Instructions
 
 1. Download [rye](https://rye.astral.sh/).
 2. Install deps:
@@ -13,5 +13,5 @@ A Lox implementation written in Python.
 3. Run pylox:
 
     ```
-    $ rye run pylox
+    $ pylox
     ```
