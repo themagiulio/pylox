@@ -2,6 +2,7 @@ from pylox.token import Token
 from pylox.token_type import TokenType
 from pylox.visitor import Visitor
 from pylox.expr import Expr, Binary, Literal, Grouping, Unary
+from pylox.stmt import Stmt
 from pylox.error_handler import ErrorHandler
 from pylox.runtime_error import LoxRuntimeError
 
@@ -12,14 +13,26 @@ class Interpreter(Visitor):
     def __init__(self, error_handler: ErrorHandler):
         self.error_handler = error_handler
 
-    def interpret(self, expr: Expr):
+    def interpret(self, stmts: list[Stmt]):
         try:
-            value: object = self.evaluate(expr)
-            print(self.stringify(value))
+            for stmt in stmts:
+                self.execute(stmt)
         except LoxRuntimeError as err:
             self.error_handler.runtime_error(err)
 
-    def visit_literal_expr(self, expr: Literal):
+    def execute(self, stmt: Stmt):
+        stmt.accept(self)
+
+    def visit_expression_stmt(self, stmt: Stmt) -> None:
+        self.evaluate(stmt.expression)
+        return None
+
+    def visit_print_stmt(self, stmt: Stmt) -> None:
+        value: object = self.evaluate(stmt.expression)
+        print(self.stringify(value))
+        return None
+
+    def visit_literal_expr(self, expr: Literal) -> object:
         return expr.value
 
     def visit_grouping_expr(self, expr: Grouping):

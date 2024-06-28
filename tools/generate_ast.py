@@ -21,6 +21,15 @@ def main():
         ],
     )
 
+    define_ast(
+        output_dir,
+        "stmt",
+        [
+            "Expression : Expr expression",
+            "Print      : Expr expression",
+        ],
+    )
+
 
 def define_ast(output_dir: str, basename: str, types: list[str]):
     # Open file
@@ -28,7 +37,7 @@ def define_ast(output_dir: str, basename: str, types: list[str]):
     file_obj = open(file_path, "w", encoding="UTF-8")
 
     # Define imports
-    define_imports(file_obj)
+    define_imports(file_obj, basename)
 
     # Define baseclass
     define_baseclass(file_obj, basename)
@@ -38,14 +47,17 @@ def define_ast(output_dir: str, basename: str, types: list[str]):
         classname = type.split(":")[0].strip()
         fields = type.split(":")[1].strip()
         define_type(file_obj, basename, classname, fields)
-        define_visitor(file_obj, classname)
+        define_visitor(file_obj, classname, basename)
 
     # Close file
     file_obj.close()
 
 
-def define_imports(file_obj: TextIOWrapper):
-    file_obj.write("from pylox.token import Token\n")
+def define_imports(file_obj: TextIOWrapper, basename: str):
+    if basename == "expr":
+        file_obj.write("from pylox.token import Token\n")
+    else:
+        file_obj.write("from pylox.expr import Expr\n")
 
 
 def define_baseclass(file_obj: TextIOWrapper, basename: str):
@@ -76,9 +88,11 @@ def define_type(file_obj: TextIOWrapper, basename: str, classname: str, fields: 
         file_obj.write(f"\t\tself.{name} = {name}\n")
 
 
-def define_visitor(file_obj: TextIOWrapper, basename: str):
+def define_visitor(file_obj: TextIOWrapper, classname: str, basename: str):
     file_obj.write("\tdef accept(self, visitor):\n")
-    file_obj.write(f"\t\treturn visitor.visit_{basename.lower()}_expr(self)\n")
+    file_obj.write(
+        f"\t\treturn visitor.visit_{classname.lower()}_{basename.lower()}(self)\n"
+    )
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ from pylox.error_handler import ErrorHandler
 from pylox.token import Token
 from pylox.token_type import TokenType
 from pylox.expr import Expr, Binary, Unary, Literal, Grouping
+from pylox.stmt import Stmt, Expression, Print
 
 
 class Parser:
@@ -18,10 +19,28 @@ class Parser:
         self.error_handler = error_handler
 
     def parse(self):
-        try:
-            return self.expression()
-        except Parser.ParseError:
-            return None
+        statements: list[Stmt] = []
+
+        while not self.is_at_end():
+            statements.append(self.statement())
+
+        return statements
+
+    def statement(self) -> Stmt:
+        if self.match(TokenType.PRINT):
+            return self.print_statement()
+
+        return self.expression_statement()
+
+    def print_statement(self) -> Stmt:
+        value: Expr = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
+        return Print(value)
+
+    def expression_statement(self) -> Stmt:
+        expr: Expr = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
+        return Expression(expr)
 
     def expression(self) -> Expr:
         return self.equality()
@@ -150,7 +169,7 @@ class Parser:
 
     def error(self, token: Token, message: str):
         self.error_handler.error(token, message)
-        return Parser.ParseError()
+        return Parser.ParseError(message)
 
     def peek(self):
         return self.tokens[self.current]
