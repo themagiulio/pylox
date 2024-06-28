@@ -145,7 +145,8 @@ class Parser:
         if self.check(token_type):
             return self.advance()
 
-        raise self.error(self.peek(), message)
+        return self.error_handler.error(self.peek(), message)
+        # raise self.error(self.peek(), message)
 
     def error(self, token: Token, message: str):
         self.error_handler.error(token, message)
