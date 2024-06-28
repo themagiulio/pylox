@@ -3,6 +3,7 @@ import sys
 from pylox.error_handler import ErrorHandler
 from pylox.scanner import Scanner
 from pylox.parser import Parser
+from pylox.interpreter import Interpreter
 from pylox.expr import Expr
 
 
@@ -10,10 +11,21 @@ class PyLox:
     error_handler: ErrorHandler = ErrorHandler()
 
     def run_file(self, file_path: str) -> None:
-        pass
+        source: str = ""
+
+        with open(file_path, "r") as f_obj:
+            source = f_obj.read()
+
+        self.run(source)
+
+        # Stop if there was a runtime error
+        if self.error_handler.had_runtime_error:
+            sys.exit(70)
 
     def run_prompt(self) -> None:
-        print("Pylox, an implementation of the Lox programming language.")
+        print(
+            "Pylox, an implementation of the Lox programming language written in Python."
+        )
 
         while True:
             line = str(input(">>> "))
@@ -24,16 +36,15 @@ class PyLox:
         scanner: Scanner = Scanner(source, self.error_handler)
         tokens: list[str] = scanner.scan_tokens()
         parser: Parser = Parser(tokens, self.error_handler)
+        interpreter: Interpreter = Interpreter(self.error_handler)
+
+        expr: Expr = parser.parse()
 
         # Stop if there was a syntax error
-        if self.error_handler.had_error:
-            sys.exit(65)
+        if self.error_handler.had_error or self.error_handler.had_runtime_error:
+            return
 
-        from pylox.ast_printer import AstPrinter
-
-        expression: Expr = parser.parse()
-
-        print(AstPrinter().print(expression))
+        interpreter.interpret(expr)
 
     def report(self, line: int, message: str) -> None:
         print(f"[{line}] Error: {message}")

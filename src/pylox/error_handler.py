@@ -17,6 +17,11 @@ class ErrorHandler:
         else:
             self.report(token, "", message)
 
+    def runtime_error(self, error):
+        print(f"[Line {error.token.line}] --> {error.message}")
+        self.had_error = True
+        self.had_runtime_error = True
+
     def report(self, line: int, where: str, message: str):
         print(f"Line {line} | Error{where}: {message}", file=sys.stderr)
         self.had_error = True
