@@ -18,7 +18,7 @@ class Parser:
         self.tokens = tokens
         self.error_handler = error_handler
 
-    def parse(self):
+    def parse(self) -> list[Stmt]:
         statements: list[Stmt] = []
 
         while not self.is_at_end():

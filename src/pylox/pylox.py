@@ -4,7 +4,7 @@ from pylox.error_handler import ErrorHandler
 from pylox.scanner import Scanner
 from pylox.parser import Parser
 from pylox.interpreter import Interpreter
-from pylox.expr import Expr
+from pylox.stmt import Stmt
 
 
 class PyLox:
@@ -42,13 +42,13 @@ class PyLox:
         parser: Parser = Parser(tokens, self.error_handler)
         interpreter: Interpreter = Interpreter(self.error_handler)
 
-        expr: Expr = parser.parse()
+        stmts: list[Stmt] = parser.parse()
 
         # Stop if there was a syntax error
         if self.error_handler.had_error or self.error_handler.had_runtime_error:
             return
 
-        interpreter.interpret(expr)
+        interpreter.interpret(stmts)
 
     def report(self, line: int, message: str) -> None:
         print(f"[{line}] Error: {message}")
