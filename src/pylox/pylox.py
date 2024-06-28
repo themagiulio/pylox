@@ -1,4 +1,5 @@
 import sys
+import readline  # noqa: F401
 
 from pylox.error_handler import ErrorHandler
 from pylox.scanner import Scanner
@@ -31,10 +32,15 @@ class PyLox:
             "Pylox, an implementation of the Lox programming language written in Python."
         )
 
-        while True:
-            line = str(input(">>> "))
-            self.run(line)
-            self.error_handler.had_error = False
+        try:
+            while True:
+                line = str(input(">>> "))
+                self.run(line)
+                self.error_handler.had_error = False
+                self.error_handler.had_runtime_error = False
+        except KeyboardInterrupt:
+            print("\nExited pylox\n")
+            exit()
 
     def run(self, source):
         scanner: Scanner = Scanner(source, self.error_handler)
