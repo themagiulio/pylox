@@ -1,0 +1,11 @@
+print "Hey, the source of this program contains a multiline comment";
+
+/*
+
+This won't be executed
+
+print "Hello";
+
+*/
+
+print "See?";
