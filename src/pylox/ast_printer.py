@@ -4,7 +4,9 @@ from pylox.visitor import Visitor
 
 class AstPrinter(Visitor):
     def print(self, expr: Expr):
-        return expr.accept(self)
+        if expr is not None:
+            return expr.accept(self)
+        return "nil"
 
     def visit_binary_expr(self, expr: Binary):
         return self.parenthesize(expr.operator.lexeme, expr.left, expr.right)
