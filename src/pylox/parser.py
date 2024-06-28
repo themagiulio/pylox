@@ -1,8 +1,8 @@
 from pylox.error_handler import ErrorHandler
 from pylox.token import Token
 from pylox.token_type import TokenType
-from pylox.expr import Expr, Binary, Unary, Literal, Grouping
-from pylox.stmt import Stmt, Expression, Print
+from pylox.expr import Expr, Binary, Unary, Literal, Grouping, Variable
+from pylox.stmt import Stmt, Expression, Print, Var
 
 
 class Parser:
@@ -22,9 +22,18 @@ class Parser:
         statements: list[Stmt] = []
 
         while not self.is_at_end():
-            statements.append(self.statement())
+            statements.append(self.declaration())
 
         return statements
+
+    def declaration(self) -> Stmt:
+        try:
+            if self.match(TokenType.VAR):
+                return self.var_declaration()
+            return self.statement()
+        except Parser.ParseError:
+            self.syncronize()
+            return None
 
     def statement(self) -> Stmt:
         if self.match(TokenType.PRINT):
@@ -36,6 +45,16 @@ class Parser:
         value: Expr = self.expression()
         self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Print(value)
+
+    def var_declaration(self) -> Var:
+        name: Token = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
+        initializer: Expr = None
+
+        if self.match(TokenType.EQUAL):
+            initializer = self.expression()
+
+        self.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.")
+        return Var(name, initializer)
 
     def expression_statement(self) -> Stmt:
         expr: Expr = self.expression()
@@ -111,6 +130,9 @@ class Parser:
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)
 
+        if self.match(TokenType.IDENTIFIER):
+            return Variable(self.previous())
+
         if self.match(TokenType.LEFT_PAREN):
             expr: Expr = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
@@ -164,8 +186,7 @@ class Parser:
         if self.check(token_type):
             return self.advance()
 
-        return self.error_handler.error(self.peek(), message)
-        # raise self.error(self.peek(), message)
+        raise self.error(self.peek(), message)
 
     def error(self, token: Token, message: str):
         self.error_handler.error(token, message)

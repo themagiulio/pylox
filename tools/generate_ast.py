@@ -18,6 +18,7 @@ def main():
             "Grouping : Expr expression",
             "Literal  : object value",
             "Unary    : Token operator, Expr right",
+            "Variable : Token name",
         ],
     )
 
@@ -27,6 +28,7 @@ def main():
         [
             "Expression : Expr expression",
             "Print      : Expr expression",
+            "Var        : Token name, Expr initializer",
         ],
     )
 
@@ -57,6 +59,7 @@ def define_imports(file_obj: TextIOWrapper, basename: str):
     if basename == "expr":
         file_obj.write("from pylox.token import Token\n")
     else:
+        file_obj.write("from pylox.token import Token\n")
         file_obj.write("from pylox.expr import Expr\n")
 
 

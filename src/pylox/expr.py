@@ -49,3 +49,13 @@ class Unary(Expr):
 
     def accept(self, visitor):
         return visitor.visit_unary_expr(self)
+
+
+class Variable(Expr):
+    name: Token
+
+    def __init__(self, name):
+        self.name = name
+
+    def accept(self, visitor):
+        return visitor.visit_variable_expr(self)
