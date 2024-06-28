@@ -1,14 +1,16 @@
 from pylox.token import Token
 from pylox.token_type import TokenType
 from pylox.visitor import Visitor
-from pylox.expr import Expr, Binary, Literal, Grouping, Unary
-from pylox.stmt import Stmt
+from pylox.expr import Expr, Binary, Literal, Grouping, Unary, Variable
+from pylox.stmt import Stmt, Var
+from pylox.environment import Environment
 from pylox.error_handler import ErrorHandler
 from pylox.runtime_error import LoxRuntimeError
 
 
 class Interpreter(Visitor):
     error_handler: ErrorHandler
+    environment: Environment = Environment()
 
     def __init__(self, error_handler: ErrorHandler):
         self.error_handler = error_handler
@@ -81,6 +83,17 @@ class Interpreter(Visitor):
                 return -1 * right
             case TokenType.BANG:
                 return not self.is_truthy(right)
+
+    def visit_variable_expr(self, expr: Variable):
+        return self.environment.get(expr.name)
+
+    def visit_var_stmt(self, stmt: Var) -> None:
+        value: object = None
+
+        if stmt.initializer is not None:
+            value = self.evaluate(stmt.initializer)
+
+        self.environment.define(stmt.name.lexeme, value)
 
     def evaluate(self, expr: Expr) -> object:
         return expr.accept(self)
