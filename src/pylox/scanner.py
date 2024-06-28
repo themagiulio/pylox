@@ -67,7 +67,11 @@ class Scanner:
             case ";":
                 self.add_token(TokenType.SEMICOLON)
             case "*":
-                self.add_token(TokenType.STAR)
+                # Check if a multiline comment is ending
+                if self.match("/"):
+                    self.advance()
+                else:
+                    self.add_token(TokenType.STAR)
             case "!":
                 self.add_token(
                     TokenType.BANG_EQUAL if self.match("=") else TokenType.BANG
@@ -88,6 +92,9 @@ class Scanner:
                 # Check if a comment is beginning
                 if self.match("/"):
                     while self.peek() != "\n" and not self.is_at_end():
+                        self.advance()
+                elif self.match("*"):
+                    while self.peek() != "*" and not self.is_at_end():
                         self.advance()
                 else:
                     self.add_token(TokenType.SLASH)
