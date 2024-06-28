@@ -1,3 +1,4 @@
+from pylox.error_handler import ErrorHandler
 from pylox.token_type import TokenType
 from pylox.token import Token
 
@@ -8,6 +9,7 @@ class Scanner:
     start: int = 0
     current: int = 0
     line: int = 1
+    error_handler: ErrorHandler
 
     keywords = {
         "and": TokenType.AND,
@@ -28,8 +30,9 @@ class Scanner:
         "while": TokenType.WHILE,
     }
 
-    def __init__(self, source):
+    def __init__(self, source: str, error_handler: ErrorHandler):
         self.source = source
+        self.error_handler = error_handler
 
     def scan_tokens(self) -> list[str]:
         self.tokens = []
@@ -101,8 +104,9 @@ class Scanner:
                 elif c.isalpha():
                     self.identifier()
                 else:
-                    print("Unexpected character.")
-                    exit()
+                    self.error_handler.error(self.line, "Unexpected character.")
+
+        return
 
     def advance(self):
         c = self.source[self.current]
@@ -132,8 +136,8 @@ class Scanner:
             self.advance()
 
         if self.is_at_end():
-            print("Unterminated string.")
-            exit()
+            self.error_handler.error(self.line, "Unterminated string.")
+            return
 
         # Closing '"'
         self.advance()
