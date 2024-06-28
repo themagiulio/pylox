@@ -13,13 +13,17 @@ class PyLox:
     def run_file(self, file_path: str) -> None:
         source: str = ""
 
-        with open(file_path, "r") as f_obj:
-            source = f_obj.read()
+        try:
+            with open(file_path, "r") as f_obj:
+                source = f_obj.read()
+        except IOError:
+            # HACK, should use error_handler instead
+            print(f"Error: No such file or directory '{file_path}'.")
+            self.error_handler.had_error = True
 
         self.run(source)
 
-        # Stop if there was a runtime error
-        if self.error_handler.had_runtime_error:
+        if self.error_handler.had_runtime_error or self.error_handler.had_error:
             sys.exit(70)
 
     def run_prompt(self) -> None:
