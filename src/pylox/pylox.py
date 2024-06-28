@@ -32,15 +32,18 @@ class PyLox:
             "Pylox, an implementation of the Lox programming language written in Python."
         )
 
-        try:
-            while True:
+        while True:
+            try:
                 line = str(input(">>> "))
                 self.run(line)
                 self.error_handler.had_error = False
                 self.error_handler.had_runtime_error = False
-        except KeyboardInterrupt:
-            print("\nExited pylox\n")
-            exit()
+            except EOFError:
+                print("\n")
+                exit()
+            except KeyboardInterrupt:
+                print("\n")
+                continue
 
     def run(self, source):
         scanner: Scanner = Scanner(source, self.error_handler)
