@@ -10,8 +10,13 @@ A [Lox](https://github.com/munificent/craftinginterpreters) implementation writt
     ```
     $ rye sync
     ```
-3. Run pylox:
+3. Run pylox (REPL):
 
     ```
     $ pylox
+    ```
+4. Execute example programs (optional):
+
+    ```
+    $ pylox ./examples/hello_world.lox
     ```
