@@ -1,7 +1,7 @@
 from pylox.error_handler import ErrorHandler
 from pylox.token import Token
 from pylox.token_type import TokenType
-from pylox.expr import Expr, Binary, Unary, Literal, Grouping, Variable
+from pylox.expr import Expr, Assign, Binary, Unary, Literal, Grouping, Variable
 from pylox.stmt import Stmt, Expression, Print, Var
 
 
@@ -62,7 +62,22 @@ class Parser:
         return Expression(expr)
 
     def expression(self) -> Expr:
-        return self.equality()
+        return self.assignment()
+
+    def assignment(self):
+        expr: Expr = self.equality()
+
+        if self.match(TokenType.EQUAL):
+            equals: Token = self.previous()
+            value: Expr = self.assignment()
+
+            if isinstance(expr, Variable):
+                name: Token = expr.name
+                return Assign(name, value)
+
+            self.error(equals, "Invalid assignment target.")
+
+        return expr
 
     def equality(self) -> Expr:
         expr: Expr = self.comparison()

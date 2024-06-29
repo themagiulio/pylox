@@ -1,7 +1,7 @@
 from pylox.token import Token
 from pylox.token_type import TokenType
 from pylox.visitor import Visitor
-from pylox.expr import Expr, Binary, Literal, Grouping, Unary, Variable
+from pylox.expr import Expr, Assign, Binary, Literal, Grouping, Unary, Variable
 from pylox.stmt import Stmt, Var
 from pylox.environment import Environment
 from pylox.error_handler import ErrorHandler
@@ -39,6 +39,11 @@ class Interpreter(Visitor):
 
     def visit_grouping_expr(self, expr: Grouping):
         return self.evaluate(expr.expression)
+
+    def visit_assign_expr(self, expr: Assign):
+        value: object = self.evaluate(expr.value)
+        self.environment.assign(expr.name, value)
+        return value
 
     def visit_binary_expr(self, expr: Binary):
         left = self.evaluate(expr.left)
