@@ -51,6 +51,20 @@ class Literal(Expr):
         return visitor.visit_literal_expr(self)
 
 
+class Logical(Expr):
+    left: Expr
+    operator: Token
+    right: Expr
+
+    def __init__(self, left, operator, right):
+        self.left = left
+        self.operator = operator
+        self.right = right
+
+    def accept(self, visitor):
+        return visitor.visit_logical_expr(self)
+
+
 class Unary(Expr):
     operator: Token
     right: Expr

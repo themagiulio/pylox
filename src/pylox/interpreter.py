@@ -1,8 +1,8 @@
 from pylox.token import Token
 from pylox.token_type import TokenType
 from pylox.visitor import Visitor
-from pylox.expr import Expr, Assign, Binary, Literal, Grouping, Unary, Variable
-from pylox.stmt import Stmt, Block, Var
+from pylox.expr import Expr, Assign, Binary, Literal, Logical, Grouping, Unary, Variable
+from pylox.stmt import Stmt, Block, Break, Var, If, While
 from pylox.environment import Environment
 from pylox.error_handler import ErrorHandler
 from pylox.runtime_error import LoxRuntimeError
@@ -12,6 +12,9 @@ class Interpreter(Visitor):
     error_handler: ErrorHandler
     environment: Environment = Environment()
     is_repl: bool
+
+    class LoxBreakException(RuntimeError):
+        pass
 
     def __init__(self, error_handler: ErrorHandler, is_repl: bool = False):
         self.error_handler = error_handler
@@ -49,6 +52,12 @@ class Interpreter(Visitor):
             print(self.stringify(evaluated_expr))
         return None
 
+    def visit_if_stmt(self, stmt: If) -> None:
+        if self.is_truthy(self.evaluate(stmt.condition)):
+            self.execute(stmt.then_branch)
+        elif stmt.else_branch is not None:
+            self.execute(stmt.else_branch)
+
     def visit_print_stmt(self, stmt: Stmt) -> None:
         value: object = self.evaluate(stmt.expression)
         print(self.stringify(value))
@@ -56,6 +65,18 @@ class Interpreter(Visitor):
 
     def visit_literal_expr(self, expr: Literal) -> object:
         return expr.value
+
+    def visit_logical_expr(self, expr: Logical) -> object:
+        left: object = self.evaluate(expr.left)
+
+        if expr.operator.token_type == TokenType.OR:
+            if self.is_truthy(left):
+                return left
+        else:
+            if not self.is_truthy(left):
+                return left
+
+        return self.evaluate(expr.right)
 
     def visit_grouping_expr(self, expr: Grouping):
         return self.evaluate(expr.expression)
@@ -119,6 +140,19 @@ class Interpreter(Visitor):
             value = self.evaluate(stmt.initializer)
 
         self.environment.define(stmt.name.lexeme, value)
+
+    def visit_while_stmt(self, stmt: While) -> None:
+        try:
+            while self.is_truthy(self.evaluate(stmt.condition)):
+                try:
+                    self.execute(stmt.body)
+                except Exception:
+                    pass
+        except Interpreter.LoxBreakException:
+            return
+
+    def visit_break_stmt(self, stmt: Break) -> None:
+        raise Interpreter.LoxBreakException()
 
     def evaluate(self, expr: Expr) -> object:
         return expr.accept(self)

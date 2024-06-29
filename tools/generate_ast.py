@@ -18,6 +18,7 @@ def main():
             "Binary   : Expr left, Token operator, Expr right",
             "Grouping : Expr expression",
             "Literal  : object value",
+            "Logical  : Expr left, Token operator, Expr right",
             "Unary    : Token operator, Expr right",
             "Variable : Token name",
         ],
@@ -28,9 +29,12 @@ def main():
         "stmt",
         [
             "Block      : list[Stmt] statements",
+            "Break      :",
             "Expression : Expr expression",
+            "If         : Expr condition, Stmt then_branch, Stmt|None else_branch",
             "Print      : Expr expression",
             "Var        : Token name, Expr initializer",
+            "While      : Expr condition, Stmt body",
         ],
     )
 
@@ -77,20 +81,24 @@ def define_type(file_obj: TextIOWrapper, basename: str, classname: str, fields: 
 
     # Get field names and types
     field_list: list[str] = fields.split(", ")
-    field_tuple = [(field.split(" ")[1], field.split(" ")[0]) for field in field_list]
 
-    for field_name, field_type in field_tuple:
-        file_obj.write(f"\t{field_name}: {field_type}\n")
+    if field_list[0] != "":
+        field_tuple = [
+            (field.split(" ")[1], field.split(" ")[0]) for field in field_list
+        ]
 
-    # Field names as string
-    field_names = str([field[0] for field in field_tuple])[1:-1].replace("'", "")
+        for field_name, field_type in field_tuple:
+            file_obj.write(f"\t{field_name}: {field_type}\n")
 
-    # Init function
-    file_obj.write(f"\tdef __init__(self, {field_names}):\n")
+        # Field names as string
+        field_names = str([field[0] for field in field_tuple])[1:-1].replace("'", "")
 
-    for field in field_list:
-        name: str = field.split(" ")[1]
-        file_obj.write(f"\t\tself.{name} = {name}\n")
+        # Init function
+        file_obj.write(f"\tdef __init__(self, {field_names}):\n")
+
+        for field in field_list:
+            name: str = field.split(" ")[1]
+            file_obj.write(f"\t\tself.{name} = {name}\n")
 
 
 def define_visitor(file_obj: TextIOWrapper, classname: str, basename: str):
