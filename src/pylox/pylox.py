@@ -35,7 +35,7 @@ class PyLox:
         while True:
             try:
                 line = str(input(">>> "))
-                self.run(line)
+                self.run(line, is_repl=True)
                 self.error_handler.had_error = False
                 self.error_handler.had_runtime_error = False
             except EOFError:
@@ -45,11 +45,11 @@ class PyLox:
                 print("\n")
                 continue
 
-    def run(self, source):
+    def run(self, source: str, is_repl: bool = False):
         scanner: Scanner = Scanner(source, self.error_handler)
         tokens: list[str] = scanner.scan_tokens()
         parser: Parser = Parser(tokens, self.error_handler)
-        interpreter: Interpreter = Interpreter(self.error_handler)
+        interpreter: Interpreter = Interpreter(self.error_handler, is_repl)
 
         stmts: list[Stmt] = parser.parse()
 

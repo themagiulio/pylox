@@ -11,9 +11,11 @@ from pylox.runtime_error import LoxRuntimeError
 class Interpreter(Visitor):
     error_handler: ErrorHandler
     environment: Environment = Environment()
+    is_repl: bool
 
-    def __init__(self, error_handler: ErrorHandler):
+    def __init__(self, error_handler: ErrorHandler, is_repl: bool = False):
         self.error_handler = error_handler
+        self.is_repl = is_repl
 
     def interpret(self, stmts: list[Stmt]):
         try:
@@ -41,7 +43,10 @@ class Interpreter(Visitor):
         return None
 
     def visit_expression_stmt(self, stmt: Stmt) -> None:
-        self.evaluate(stmt.expression)
+        evaluated_expr = self.evaluate(stmt.expression)
+
+        if self.is_repl:
+            print(self.stringify(evaluated_expr))
         return None
 
     def visit_print_stmt(self, stmt: Stmt) -> None:
