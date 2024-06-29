@@ -2,7 +2,7 @@ from pylox.token import Token
 from pylox.token_type import TokenType
 from pylox.visitor import Visitor
 from pylox.expr import Expr, Assign, Binary, Literal, Grouping, Unary, Variable
-from pylox.stmt import Stmt, Var
+from pylox.stmt import Stmt, Block, Var
 from pylox.environment import Environment
 from pylox.error_handler import ErrorHandler
 from pylox.runtime_error import LoxRuntimeError
@@ -24,6 +24,21 @@ class Interpreter(Visitor):
 
     def execute(self, stmt: Stmt):
         stmt.accept(self)
+
+    def execute_block(self, stmts: list[Stmt], environment: Environment):
+        previous = self.environment
+
+        try:
+            self.environment = environment
+
+            for stmt in stmts:
+                self.execute(stmt)
+        finally:
+            self.environment = previous
+
+    def visit_block_stmt(self, stmt: Block) -> None:
+        self.execute_block(stmt.statements, Environment(self.environment))
+        return None
 
     def visit_expression_stmt(self, stmt: Stmt) -> None:
         self.evaluate(stmt.expression)
