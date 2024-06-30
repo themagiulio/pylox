@@ -1,17 +1,54 @@
-from pylox.token import Token
-from pylox.token_type import TokenType
+from typing import Final
+
 from pylox.visitor import Visitor
-from pylox.expr import Expr, Assign, Binary, Literal, Logical, Grouping, Unary, Variable
-from pylox.stmt import Stmt, Block, Break, Var, If, While
 from pylox.environment import Environment
 from pylox.error_handler import ErrorHandler
+from pylox.expr import (
+    Expr,
+    Assign,
+    Binary,
+    Call,
+    Literal,
+    Logical,
+    Grouping,
+    Unary,
+    Variable,
+)
+from pylox.lox_callable import LoxCallable
+from pylox.lox_exceptions import LoxReturnException
+from pylox.lox_function import LoxFunction
 from pylox.runtime_error import LoxRuntimeError
+from pylox.stmt import Stmt, Block, Break, Function, Return, Var, If, While
+from pylox.token import Token
+from pylox.token_type import TokenType
 
 
 class Interpreter(Visitor):
     error_handler: ErrorHandler
-    environment: Environment = Environment()
+    _globals: Final[Environment] = Environment()
+    environment: Environment = _globals
     is_repl: bool
+
+    class Clock(LoxCallable):
+        def __init__(self):
+            from time import time
+
+            super().__init__()
+            self.start_time = time()
+
+        @property
+        def arity(self):
+            return 0
+
+        def call(self):
+            from time import time
+
+            return time() - self.start_time
+
+        def __str__(self):
+            return "<native fn>"
+
+    _globals.define("clock", Clock())
 
     class LoxBreakException(RuntimeError):
         pass
@@ -52,6 +89,11 @@ class Interpreter(Visitor):
             print(self.stringify(evaluated_expr))
         return None
 
+    def visit_function_stmt(self, stmt: Function):
+        function: LoxFunction = LoxFunction(stmt, self.environment)
+        self.environment.define(stmt.name.lexeme, function)
+        return None
+
     def visit_if_stmt(self, stmt: If) -> None:
         if self.is_truthy(self.evaluate(stmt.condition)):
             self.execute(stmt.then_branch)
@@ -62,6 +104,14 @@ class Interpreter(Visitor):
         value: object = self.evaluate(stmt.expression)
         print(self.stringify(value))
         return None
+
+    def visit_return_stmt(self, stmt: Return) -> None:
+        value: object | None = None
+
+        if stmt.value is not None:
+            value = self.evaluate(stmt.value)
+
+        raise LoxReturnException(value)
 
     def visit_literal_expr(self, expr: Literal) -> object:
         return expr.value
@@ -119,6 +169,25 @@ class Interpreter(Visitor):
                 return not self.is_equal(left, right)
             case TokenType.EQUAL_EQUAL:
                 return self.is_equal(left, right)
+
+    def visit_call_expr(self, expr: Call):
+        callee: object = self.evaluate(expr.callee)
+        args: list[object] = []
+
+        for arg in expr.arguments:
+            args.append(self.evaluate(arg))
+
+        if not isinstance(callee, LoxCallable):
+            raise LoxRuntimeError(expr.paren, "Can only call functions and classes.")
+
+        function: LoxCallable = callee
+
+        if len(args) != function.arity:
+            raise LoxRuntimeError(
+                expr.paren, f"Expected {function.arity} arguments, but got {len(args)}."
+            )
+
+        return function.call(self, args)
 
     def visit_unary_expr(self, expr: Unary):
         right: object = self.evaluate(expr.right)

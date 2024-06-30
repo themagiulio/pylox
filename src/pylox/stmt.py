@@ -31,6 +31,20 @@ class Expression(Stmt):
         return visitor.visit_expression_stmt(self)
 
 
+class Function(Stmt):
+    name: Token
+    params: list[Token]
+    body: list[Stmt]
+
+    def __init__(self, name, params, body):
+        self.name = name
+        self.params = params
+        self.body = body
+
+    def accept(self, visitor):
+        return visitor.visit_function_stmt(self)
+
+
 class If(Stmt):
     condition: Expr
     then_branch: Stmt
@@ -53,6 +67,18 @@ class Print(Stmt):
 
     def accept(self, visitor):
         return visitor.visit_print_stmt(self)
+
+
+class Return(Stmt):
+    keyword: Token
+    value: Expr
+
+    def __init__(self, keyword, value):
+        self.keyword = keyword
+        self.value = value
+
+    def accept(self, visitor):
+        return visitor.visit_return_stmt(self)
 
 
 class Var(Stmt):

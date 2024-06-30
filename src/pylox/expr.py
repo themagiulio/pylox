@@ -31,6 +31,20 @@ class Binary(Expr):
         return visitor.visit_binary_expr(self)
 
 
+class Call(Expr):
+    callee: Expr
+    paren: Token
+    arguments: list[Expr]
+
+    def __init__(self, callee, paren, arguments):
+        self.callee = callee
+        self.paren = paren
+        self.arguments = arguments
+
+    def accept(self, visitor):
+        return visitor.visit_call_expr(self)
+
+
 class Grouping(Expr):
     expression: Expr
 

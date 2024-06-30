@@ -1,8 +1,29 @@
 from pylox.error_handler import ErrorHandler
 from pylox.token import Token
 from pylox.token_type import TokenType
-from pylox.expr import Expr, Assign, Binary, Unary, Literal, Grouping, Variable, Logical
-from pylox.stmt import Stmt, Block, Break, Expression, If, Print, Var, While
+from pylox.expr import (
+    Expr,
+    Assign,
+    Binary,
+    Call,
+    Unary,
+    Literal,
+    Grouping,
+    Variable,
+    Logical,
+)
+from pylox.stmt import (
+    Stmt,
+    Block,
+    Break,
+    Expression,
+    Function,
+    If,
+    Print,
+    Return,
+    Var,
+    While,
+)
 
 
 class Parser:
@@ -31,6 +52,8 @@ class Parser:
         try:
             if self.match(TokenType.VAR):
                 return self.var_declaration()
+            elif self.match(TokenType.FUN):
+                return self.function("function")
             return self.statement()
         except Parser.ParseError:
             self.syncronize()
@@ -45,6 +68,9 @@ class Parser:
 
         if self.match(TokenType.PRINT):
             return self.print_statement()
+
+        if self.match(TokenType.RETURN):
+            return self.return_statement()
 
         if self.match(TokenType.WHILE):
             return self.while_statement()
@@ -113,10 +139,20 @@ class Parser:
 
         return If(condition, then_branch, else_branch)
 
-    def print_statement(self) -> Stmt:
+    def print_statement(self) -> Print:
         value: Expr = self.expression()
         self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Print(value)
+
+    def return_statement(self) -> Return:
+        keyword: Token = self.previous()
+        value: Expr = None
+
+        if not self.check(TokenType.SEMICOLON):
+            value = self.expression()
+
+        self.consume(TokenType.SEMICOLON, "Expect ';' after return value.")
+        return Return(keyword, value)
 
     def var_declaration(self) -> Var:
         name: Token = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
@@ -154,6 +190,25 @@ class Parser:
         expr: Expr = self.expression()
         self.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
         return Expression(expr)
+
+    def function(self, kind: str) -> Function:
+        name: Token = self.consume(TokenType.IDENTIFIER, f"Expect {kind} name.")
+        self.consume(TokenType.LEFT_PAREN, f"Expect '(' after {kind} name.")
+        params: list[Token] = []
+
+        if not self.check(TokenType.RIGHT_PAREN):
+            while True:
+                params.append(
+                    self.consume(TokenType.IDENTIFIER, "Expect parameter name.")
+                )
+                if not self.match(TokenType.COMMA):
+                    break
+
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
+        self.consume(TokenType.LEFT_BRACE, f"Expect '{{' before {kind} body.")
+        body: list[Stmt] = self.block()
+
+        return Function(name, params, body)
 
     def block(self) -> list[Stmt]:
         stmts: list[Stmt] = []
@@ -253,7 +308,34 @@ class Parser:
             right: Expr = self.unary()
             return Unary(operator, right)
 
-        return self.primary()
+        return self.call()
+
+    def finish_call(self, callee: Expr) -> Expr:
+        args: list[Expr] = []
+
+        if not self.check(TokenType.RIGHT_PAREN):
+            while True:
+                args.append(self.expression())
+
+                if not self.match(TokenType.COMMA):
+                    break
+
+        paren: Token = self.consume(
+            TokenType.RIGHT_PAREN, "Expect ')' after arguments."
+        )
+
+        return Call(callee, paren, args)
+
+    def call(self) -> Expr:
+        expr: Expr = self.primary()
+
+        while True:
+            if self.match(TokenType.LEFT_PAREN):
+                expr = self.finish_call(expr)
+            else:
+                break
+
+        return expr
 
     def primary(self):
         if self.match(TokenType.FALSE):
