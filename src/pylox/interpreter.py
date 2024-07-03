@@ -26,6 +26,7 @@ from pylox.token_type import TokenType
 class Interpreter(Visitor):
     error_handler: ErrorHandler
     _globals: Final[Environment] = Environment()
+    _locals: Final[dict[Expr, int]]
     environment: Environment = _globals
     is_repl: bool
 
@@ -56,6 +57,7 @@ class Interpreter(Visitor):
     def __init__(self, error_handler: ErrorHandler, is_repl: bool = False):
         self.error_handler = error_handler
         self.is_repl = is_repl
+        self._locals = {}
 
     def interpret(self, stmts: list[Stmt]):
         try:
@@ -66,6 +68,9 @@ class Interpreter(Visitor):
 
     def execute(self, stmt: Stmt):
         stmt.accept(self)
+
+    def resolve(self, expr: Expr, depth: int):
+        self._locals[expr] = depth
 
     def execute_block(self, stmts: list[Stmt], environment: Environment):
         previous = self.environment
@@ -133,7 +138,14 @@ class Interpreter(Visitor):
 
     def visit_assign_expr(self, expr: Assign):
         value: object = self.evaluate(expr.value)
-        self.environment.assign(expr.name, value)
+
+        distance = self._locals.get(expr)
+
+        if distance is not None:
+            self.environment.assign_at(distance, expr.name, value)
+        else:
+            self._globals.assign(expr.name, value)
+
         return value
 
     def visit_binary_expr(self, expr: Binary):
@@ -200,7 +212,15 @@ class Interpreter(Visitor):
                 return not self.is_truthy(right)
 
     def visit_variable_expr(self, expr: Variable):
-        return self.environment.get(expr.name)
+        return self.lookup_variable(expr.name, expr)
+
+    def lookup_variable(self, name: Token, expr: Expr):
+        distance = self._locals.get(expr)
+
+        if distance is not None:
+            return self.environment.get_at(distance, name.lexeme)
+        else:
+            return self._globals.get(name)
 
     def visit_var_stmt(self, stmt: Var) -> None:
         value: object = None

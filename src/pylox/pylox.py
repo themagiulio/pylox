@@ -4,6 +4,7 @@ import readline  # noqa: F401
 from pylox.error_handler import ErrorHandler
 from pylox.scanner import Scanner
 from pylox.parser import Parser
+from pylox.resolver import Resolver
 from pylox.interpreter import Interpreter
 from pylox.stmt import Stmt
 
@@ -50,8 +51,14 @@ class PyLox:
         tokens: list[str] = scanner.scan_tokens()
         parser: Parser = Parser(tokens, self.error_handler)
         interpreter: Interpreter = Interpreter(self.error_handler, is_repl)
+        resolver: Resolver = Resolver(interpreter, self.error_handler)
 
         stmts: list[Stmt] = parser.parse()
+
+        if self.error_handler.had_error:
+            return
+
+        resolver.resolve(stmts)
 
         # Stop if there was a syntax error
         if self.error_handler.had_error or self.error_handler.had_runtime_error:

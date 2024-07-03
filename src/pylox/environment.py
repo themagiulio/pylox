@@ -26,6 +26,9 @@ class Environment:
 
         raise LoxRuntimeError(name, f"Undefined variable '{name.lexeme}'.")
 
+    def assign_at(self, distance: int, name: Token, value: object):
+        self.ancestor(distance).values[name.lexeme] = value
+
     def get(self, name: Token) -> object:
         # Look for variable in current environment
         if name.lexeme in self.values:
@@ -36,3 +39,14 @@ class Environment:
             return self.enclosing.get(name)
 
         raise LoxRuntimeError(name, message=f"Undefined variable '{name.lexeme}'.")
+
+    def get_at(self, distance: int, name: str):
+        return self.ancestor(distance).values.get(name)
+
+    def ancestor(self, distance: int):
+        environment = self
+
+        for i in range(0, distance):
+            environment = environment.enclosing
+
+        return environment
