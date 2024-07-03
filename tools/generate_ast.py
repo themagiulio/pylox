@@ -33,6 +33,7 @@ def main():
             "Break      :",
             "Expression : Expr expression",
             "Function   : Token name, list[Token] params, list[Stmt] body",
+            "Class      : Token name, list[Function] methods",
             "If         : Expr condition, Stmt then_branch, Stmt|None else_branch",
             "Print      : Expr expression",
             "Return     : Token keyword, Expr value",

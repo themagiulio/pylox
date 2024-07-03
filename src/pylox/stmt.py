@@ -45,6 +45,18 @@ class Function(Stmt):
         return visitor.visit_function_stmt(self)
 
 
+class Class(Stmt):
+    name: Token
+    methods: list[Function]
+
+    def __init__(self, name, methods):
+        self.name = name
+        self.methods = methods
+
+    def accept(self, visitor):
+        return visitor.visit_class_stmt(self)
+
+
 class If(Stmt):
     condition: Expr
     then_branch: Stmt

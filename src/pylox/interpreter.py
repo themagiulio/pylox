@@ -15,10 +15,11 @@ from pylox.expr import (
     Variable,
 )
 from pylox.lox_callable import LoxCallable
+from pylox.lox_class import LoxClass
 from pylox.lox_exceptions import LoxReturnException
 from pylox.lox_function import LoxFunction
 from pylox.runtime_error import LoxRuntimeError
-from pylox.stmt import Stmt, Block, Break, Function, Return, Var, If, While
+from pylox.stmt import Stmt, Block, Break, Class, Function, Return, Var, If, While
 from pylox.token import Token
 from pylox.token_type import TokenType
 
@@ -86,6 +87,11 @@ class Interpreter(Visitor):
     def visit_block_stmt(self, stmt: Block) -> None:
         self.execute_block(stmt.statements, Environment(self.environment))
         return None
+
+    def visit_class_stmt(self, stmt: Class):
+        self.environment.define(stmt.name.lexeme, None)
+        class_ = LoxClass(stmt.name.lexeme)
+        self.environment.assign(stmt.name, class_)
 
     def visit_expression_stmt(self, stmt: Stmt) -> None:
         evaluated_expr = self.evaluate(stmt.expression)

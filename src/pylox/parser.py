@@ -16,6 +16,7 @@ from pylox.stmt import (
     Stmt,
     Block,
     Break,
+    Class,
     Expression,
     Function,
     If,
@@ -50,7 +51,9 @@ class Parser:
 
     def declaration(self) -> Stmt:
         try:
-            if self.match(TokenType.VAR):
+            if self.match(TokenType.CLASS):
+                return self.class_declaration()
+            elif self.match(TokenType.VAR):
                 return self.var_declaration()
             elif self.match(TokenType.FUN):
                 return self.function("function")
@@ -58,6 +61,18 @@ class Parser:
         except Parser.ParseError:
             self.syncronize()
             return None
+
+    def class_declaration(self) -> Class:
+        name: Token = self.consume(TokenType.IDENTIFIER, "Expect class name.")
+        self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+
+        methods: list[Function] = []
+        while not self.check(TokenType.RIGHT_BRACE) and not self.is_at_end():
+            methods.add(self.function("method"))
+
+        self.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
+
+        return Class(name, methods)
 
     def statement(self) -> Stmt:
         if self.match(TokenType.FOR):
