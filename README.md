@@ -5,7 +5,7 @@ A [Lox](https://github.com/munificent/craftinginterpreters) implementation writt
 ## Instructions
 
 1. Download [rye](https://rye.astral.sh/).
-2. Install deps:
+2. Create virtual environment:
 
     ```
     $ rye sync
