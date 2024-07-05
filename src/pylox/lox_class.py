@@ -9,8 +9,9 @@ class LoxClass(LoxCallable):
     name: Final[str]
     methods: Final[dict[str, LoxFunction]]
 
-    def __init__(self, name: str, methods: dict[str, LoxFunction]):
+    def __init__(self, name: str, superclass, methods: dict[str, LoxFunction]):
         self.name = name
+        self.superclass = superclass
         self.methods = methods
 
     def call(self, interpreter, args: list[object]):
@@ -25,6 +26,9 @@ class LoxClass(LoxCallable):
     def find_method(self, name: str):
         if name in self.methods:
             return self.methods[name]
+
+        if self.superclass is not None:
+            return self.superclass.find_method(name)
 
     @property
     def arity(self) -> int:

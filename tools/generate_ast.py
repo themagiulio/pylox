@@ -22,6 +22,7 @@ def main():
             "Literal  : object value",
             "Logical  : Expr left, Token operator, Expr right",
             "Set      : Expr object, Token name, Expr value",
+            "Super    : Token keyword, Token method",
             "This     : Token keyword",
             "Unary    : Token operator, Expr right",
             "Variable : Token name",
@@ -36,7 +37,7 @@ def main():
             "Break      :",
             "Expression : Expr expression",
             "Function   : Token name, list[Token] params, list[Stmt] body",
-            "Class      : Token name, list[Function] methods",
+            "Class      : Token name, Variable superclass, list[Function] methods",
             "If         : Expr condition, Stmt then_branch, Stmt|None else_branch",
             "Print      : Expr expression",
             "Return     : Token keyword, Expr value",
@@ -73,7 +74,7 @@ def define_imports(file_obj: TextIOWrapper, basename: str):
         file_obj.write("from pylox.token import Token\n")
     else:
         file_obj.write("from pylox.token import Token\n")
-        file_obj.write("from pylox.expr import Expr\n")
+        file_obj.write("from pylox.expr import Expr, Variable\n")
 
 
 def define_baseclass(file_obj: TextIOWrapper, basename: str):

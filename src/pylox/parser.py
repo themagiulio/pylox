@@ -11,6 +11,7 @@ from pylox.expr import (
     Literal,
     Logical,
     Set,
+    Super,
     This,
     Variable,
     Unary,
@@ -67,6 +68,12 @@ class Parser:
 
     def class_declaration(self) -> Class:
         name: Token = self.consume(TokenType.IDENTIFIER, "Expect class name.")
+        superclass: Variable = None
+
+        if self.match(TokenType.LESS):
+            self.consume(TokenType.IDENTIFIER, "Expect superclass name.")
+            superclass = Variable(self.previous())
+
         self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
 
         methods: list[Function] = []
@@ -75,7 +82,7 @@ class Parser:
 
         self.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
 
-        return Class(name, methods)
+        return Class(name, superclass, methods)
 
     def statement(self) -> Stmt:
         if self.match(TokenType.FOR):
@@ -373,11 +380,19 @@ class Parser:
         if self.match(TokenType.NIL):
             return Literal(None)
 
-        if self.match(TokenType.THIS):
-            return This(self.previous())
-
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)
+
+        if self.match(TokenType.SUPER):
+            keyword: Token = self.previous()
+            self.consume(TokenType.DOT, "Expect '.' after 'super'.")
+            method: Token = self.consume(
+                TokenType.IDENTIFIER, "Expect superclass method name."
+            )
+            return Super(keyword, method)
+
+        if self.match(TokenType.THIS):
+            return This(self.previous())
 
         if self.match(TokenType.IDENTIFIER):
             return Variable(self.previous())

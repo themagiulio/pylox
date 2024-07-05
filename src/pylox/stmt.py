@@ -1,5 +1,5 @@
 from pylox.token import Token
-from pylox.expr import Expr
+from pylox.expr import Expr, Variable
 
 
 class Stmt:
@@ -47,10 +47,12 @@ class Function(Stmt):
 
 class Class(Stmt):
     name: Token
+    superclass: Variable
     methods: list[Function]
 
-    def __init__(self, name, methods):
+    def __init__(self, name, superclass, methods):
         self.name = name
+        self.superclass = superclass
         self.methods = methods
 
     def accept(self, visitor):

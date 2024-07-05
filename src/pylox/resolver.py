@@ -12,6 +12,7 @@ from pylox.expr import (
     Literal,
     Logical,
     Set,
+    Super,
     This,
     Unary,
 )
@@ -46,6 +47,7 @@ class Resolver(Visitor):
     class ClassType(Enum):
         NONE = auto()
         CLASS = auto()
+        SUBCLASS = auto()
 
     current_function: FunctionType = FunctionType.NONE
     current_class: ClassType = ClassType.NONE
@@ -67,6 +69,22 @@ class Resolver(Visitor):
         self.declare(stmt.name)
         self.define(stmt.name)
 
+        if (
+            stmt.superclass is not None
+            and stmt.name.lexeme == stmt.superclass.name.lexeme
+        ):
+            self.error_handler.error(
+                stmt.superclass.name, "A class can't inherit from itself."
+            )
+
+        if stmt.superclass is not None:
+            self.current_class = Resolver.ClassType.SUBCLASS
+            self.resolve(stmt.superclass)
+
+        if stmt.superclass is not None:
+            self.begin_scope()
+            self.scopes[-1]["super"] = True
+
         self.begin_scope()
         self.scopes[-1]["this"] = True
 
@@ -79,6 +97,10 @@ class Resolver(Visitor):
             self.resolve_function(method, declaration)
 
         self.end_scope()
+
+        if stmt.superclass is not None:
+            self.end_scope()
+
         self.current_class = enclosing_class
 
     def visit_expression_stmt(self, stmt: Expression):
@@ -155,6 +177,20 @@ class Resolver(Visitor):
     def visit_set_expr(self, expr: Set):
         self.resolve(expr.value)
         self.resolve(expr.object)
+
+    def visit_super_expr(self, expr: Super):
+        if self.current_class == Resolver.ClassType.NONE:
+            self.error_handler.error(
+                expr.keyword,
+                "Can't use 'super' outside of a class.",
+            )
+        elif self.current_class != Resolver.ClassType.SUBCLASS:
+            self.error_handler.error(
+                expr.keyword,
+                "Can't use 'super' in a class with no superclass.",
+            )
+
+        self.resolve_local(expr, expr.keyword)
 
     def visit_this_expr(self, expr: This):
         if self.current_class == Resolver.ClassType.NONE:

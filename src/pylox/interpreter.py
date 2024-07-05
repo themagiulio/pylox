@@ -13,6 +13,7 @@ from pylox.expr import (
     Logical,
     Grouping,
     Set,
+    Super,
     This,
     Unary,
     Variable,
@@ -93,7 +94,22 @@ class Interpreter(Visitor):
         return None
 
     def visit_class_stmt(self, stmt: Class):
+        superclass: object = None
+
+        if stmt.superclass is not None:
+            superclass = self.evaluate(stmt.superclass)
+
+            if not isinstance(superclass, LoxClass):
+                raise LoxRuntimeError(
+                    stmt.superclass.name, "Superclass must be a class."
+                )
+
         self.environment.define(stmt.name.lexeme, None)
+
+        if stmt.superclass is not None:
+            environment = Environment(self.environment)
+            self.environment.define("super", superclass)
+
         methods = {}
 
         for method in stmt.methods:
@@ -104,7 +120,11 @@ class Interpreter(Visitor):
             )
             methods[method.name.lexeme] = function
 
-        class_ = LoxClass(stmt.name.lexeme, methods)
+        class_ = LoxClass(stmt.name.lexeme, superclass, methods)
+
+        if superclass is not None:
+            environment = self.environment.enclosing
+
         self.environment.assign(stmt.name, class_)
 
     def visit_expression_stmt(self, stmt: Stmt) -> None:
@@ -162,6 +182,19 @@ class Interpreter(Visitor):
         value: object = self.evaluate(expr.value)
         obj.set_property(expr.name, value)
         return value
+
+    def visit_super_expr(self, expr: Super):
+        distance: int = self._locals.get(expr)
+        superclass: LoxClass = self.environment.get_at(distance, "super")
+        obj: LoxInstance = self.environment.get_at(distance - 1, "this")
+        method: LoxFunction = superclass.find_method(expr.method.lexeme)
+
+        if method is None:
+            raise LoxRuntimeError(
+                expr.method, f"Undefined property '{expr.method.lexeme}'."
+            )
+
+        return method.bind(obj)
 
     def visit_this_expr(self, expr: This):
         return self.lookup_variable(expr.keyword, expr)
