@@ -8,15 +8,19 @@ from pylox.expr import (
     Assign,
     Binary,
     Call,
+    Get,
     Literal,
     Logical,
     Grouping,
+    Set,
+    This,
     Unary,
     Variable,
 )
 from pylox.lox_callable import LoxCallable
 from pylox.lox_class import LoxClass
 from pylox.lox_exceptions import LoxReturnException
+from pylox.lox_instance import LoxInstance
 from pylox.lox_function import LoxFunction
 from pylox.runtime_error import LoxRuntimeError
 from pylox.stmt import Stmt, Block, Break, Class, Function, Return, Var, If, While
@@ -90,7 +94,17 @@ class Interpreter(Visitor):
 
     def visit_class_stmt(self, stmt: Class):
         self.environment.define(stmt.name.lexeme, None)
-        class_ = LoxClass(stmt.name.lexeme)
+        methods = {}
+
+        for method in stmt.methods:
+            function = LoxFunction(
+                method,
+                self.environment,
+                method.name.lexeme == "init",
+            )
+            methods[method.name.lexeme] = function
+
+        class_ = LoxClass(stmt.name.lexeme, methods)
         self.environment.assign(stmt.name, class_)
 
     def visit_expression_stmt(self, stmt: Stmt) -> None:
@@ -101,7 +115,7 @@ class Interpreter(Visitor):
         return None
 
     def visit_function_stmt(self, stmt: Function):
-        function: LoxFunction = LoxFunction(stmt, self.environment)
+        function: LoxFunction = LoxFunction(stmt, self.environment, False)
         self.environment.define(stmt.name.lexeme, function)
         return None
 
@@ -138,6 +152,19 @@ class Interpreter(Visitor):
                 return left
 
         return self.evaluate(expr.right)
+
+    def visit_set_expr(self, expr: Set):
+        obj: object = self.evaluate(expr.object)
+
+        if not isinstance(obj, LoxInstance):
+            raise LoxRuntimeError(expr.name, "Only instances have fields.")
+
+        value: object = self.evaluate(expr.value)
+        obj.set_property(expr.name, value)
+        return value
+
+    def visit_this_expr(self, expr: This):
+        return self.lookup_variable(expr.keyword, expr)
 
     def visit_grouping_expr(self, expr: Grouping):
         return self.evaluate(expr.expression)
@@ -206,6 +233,14 @@ class Interpreter(Visitor):
             )
 
         return function.call(self, args)
+
+    def visit_get_expr(self, expr: Get):
+        obj: object = self.evaluate(expr.object)
+
+        if isinstance(obj, LoxInstance):
+            return obj.get_property(expr.name)
+
+        raise LoxRuntimeError(expr.name, "Only instances have properties.")
 
     def visit_unary_expr(self, expr: Unary):
         right: object = self.evaluate(expr.right)

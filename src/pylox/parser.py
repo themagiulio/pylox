@@ -6,11 +6,14 @@ from pylox.expr import (
     Assign,
     Binary,
     Call,
-    Unary,
-    Literal,
+    Get,
     Grouping,
-    Variable,
+    Literal,
     Logical,
+    Set,
+    This,
+    Variable,
+    Unary,
 )
 from pylox.stmt import (
     Stmt,
@@ -68,7 +71,7 @@ class Parser:
 
         methods: list[Function] = []
         while not self.check(TokenType.RIGHT_BRACE) and not self.is_at_end():
-            methods.add(self.function("method"))
+            methods.append(self.function("method"))
 
         self.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
 
@@ -247,6 +250,8 @@ class Parser:
             if isinstance(expr, Variable):
                 name: Token = expr.name
                 return Assign(name, value)
+            elif isinstance(expr, Get):
+                return Set(expr.object, expr.name, value)
 
             self.error(equals, "Invalid assignment target.")
 
@@ -347,6 +352,12 @@ class Parser:
         while True:
             if self.match(TokenType.LEFT_PAREN):
                 expr = self.finish_call(expr)
+            elif self.match(TokenType.DOT):
+                name: Token = self.consume(
+                    TokenType.IDENTIFIER,
+                    "Expect property name after '.'.",
+                )
+                expr = Get(expr, name)
             else:
                 break
 
@@ -361,6 +372,9 @@ class Parser:
 
         if self.match(TokenType.NIL):
             return Literal(None)
+
+        if self.match(TokenType.THIS):
+            return This(self.previous())
 
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)
